@@ -220,5 +220,5 @@ class H_Beam:
         print("hollow rectengular finished ----------------------------------------------")
 
 # HollowRectangular().cal()
-HollowSquare().cal()
-# H_Beam().cal()
+# HollowSquare().cal()
+H_Beam().cal()
