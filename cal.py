@@ -5,6 +5,7 @@ ACCURACY = 1.5
 LENGTH_LIMIT_COE = 500
 LL = LENGTH_LIMIT_COE * MAX_AREA**0.5
 DENSITY = 1.05
+DELH_COE = 0.5
 
 FRACTURE_STRESS = 33 * 10**6
 F = 0.
@@ -12,12 +13,7 @@ M = 0.
 
 
 
-
-
 d = t = a = s = n = ACCURACY #I beam
-
-
-
 
 
 class HollowRectangular:
@@ -32,64 +28,79 @@ class HollowRectangular:
 
     def cal(self):
 
-        b = d = h = k = ACCURACY #hollow rectengular
+        b = d = h = k = ACCURACY #hallow squre
 
         while(self.area > 4 * ACCURACY**2):
-            b = LL
-            d = (self.area + h*k) / b
-            h = b - 2 * ACCURACY
-            k = d - 2 * ACCURACY
-            mass = 100 * self.area * DENSITY
-            while(b > 4):
-                while(b > 4):
-                    while(b > 4):
-                        k -= ACCURACY
-                        if(k <= 0):
-                            break
-                        
-                        
-                        b = (self.area + h*k) / d   
-                        i_temp = (b * d**3 - h * k**3) / 12
-                        M_temp = FRACTURE_STRESS * i_temp / (d/2)
-                        F_temp = M_temp / 20
-                        # print(b, d, h, k, F_temp, mass)
-                        
-                        if(F_temp/mass > self.fm):
-                            # print(b, d, h, k, F_temp, mass, F_temp/mass)
-                            self.fm = F_temp/mass
-                            
-                            self.i_hr_max = i_temp
-                            self.M_hr_max = M_temp
-                            self.F_hr_max = F_temp
-                            
-                            self.bf = b
-                            self.df = d
-                            self.hf = h
-                            self.kf = k
-                        
-                        
-                        if(b > LL or b <= 4):
-                            break
-                    h -= ACCURACY
+
+            area_temp = self.area
+
+            d = 2 * ACCURACY
+            b = 2 * ACCURACY
+            h = 0
+            k = 0
+            
+            while(area_temp <= self.area):
+                    
+                while(area_temp <= self.area):
+
+                    h = b - 2 * ACCURACY
                     k = d - 2 * ACCURACY
-                    b = (self.area + h*k) / d  
-                    if(h <= 0):
-                        break
-                    if(b <= 4):
-                        break
-                d += ACCURACY
+                    area_temp = b * d - h * k
+                    while(area_temp <= self.area and h >= 0.):
+                            
+                        while(area_temp <= self.area and k >= 0.):
+                        
+                            mass = 100 * area_temp * DENSITY
+
+                            i_temp = (b * d**3 - h * k**3) / 12
+                            M_temp = FRACTURE_STRESS * i_temp / (d/2)
+                            F_normal_temp = M_temp / 20
+
+                            Q_shear = (b*d/2 - k*h/2) * ((b)*(d/2)*(d/4) - (k/2)*h*(k/4)) / (b*d/2 - k*h/2)
+                            F_shear_temp = DELH_COE * FRACTURE_STRESS * area_temp / ACCURACY * 2 * i_temp / Q_shear
+
+                            F_temp = min(F_normal_temp, F_shear_temp)
+                            
+                            # print(F_shear_temp, F_normal_temp)
+                            # if(i_temp > self.i_hr_max):
+                            if(F_temp/mass > self.fm):
+
+                                self.fm = F_temp/mass
+                                        
+                                self.i_hr_max = i_temp
+                                self.M_hr_max = M_temp
+                                self.F_hr_max = F_temp
+                                        
+                                self.bf = b
+                                self.df = d
+                                self.hf = h
+                                self.kf = k
+
+                            k -= ACCURACY
+                            area_temp = b * d - h * k
+
+                        h -= ACCURACY
+                        k = d - 2 * ACCURACY
+                        area_temp = b * d - h * k
+
+                    d += ACCURACY
+                    h = b - 2 * ACCURACY
+                    k = d - 2 * ACCURACY
+                    area_temp = b * d - h * k
+                
+                b += ACCURACY
+                d = 2 * ACCURACY
                 h = b - 2 * ACCURACY
                 k = d - 2 * ACCURACY
-                if(d > LL):
-                    break
+                area_temp = b * d - h * k
+
             self.area -= ACCURACY
-            # print(area)
-            
+
 
         print("bf = {}\ndf = {}\nhf = {}\nkf = {}".format(self.bf, self.df, self.hf, self.kf))
         print("Inertia = {}".format(self.i_hr_max))
         print("fm_max = ", self.fm)
-        print("hollow rectengular finished ----------------------------------------------")
+        print("hollow Rectangular finished ----------------------------------------------")
 
 
 
@@ -123,9 +134,14 @@ class HollowSquare:
 
                     i_temp = (a**4 - b**4) / 12
                     M_temp = FRACTURE_STRESS * i_temp / (a/2)
-                    F_temp = M_temp / 20
-                    
+                    F_normal_temp = M_temp / 20
 
+                    Q_shear = 0
+                    F_shear_temp = DELH_COE * FRACTURE_STRESS * area_temp / ACCURACY * i_temp / Q_shear
+
+                    F_temp = min(F_normal_temp, F_shear_temp)
+                    
+                    # if(i_temp > self.i_hr_max):
                     if(F_temp/mass > self.fm):
 
                         self.fm = F_temp/mass
@@ -148,7 +164,7 @@ class HollowSquare:
         print("af = {}\nbf = {}".format(self.af, self.bf))
         print("Inertia = {}".format(self.i_hs_max))
         print("fm_max = ", self.fm)
-        print("hollow square finished ----------------------------------------------")
+        print("Hollow Square finished ----------------------------------------------")
 
 
 class H_Beam:
@@ -174,17 +190,17 @@ class H_Beam:
             while(b > t + ACCURACY):
                 while(b > t + ACCURACY):
                     while(b > t + ACCURACY):
-                        s += ACCURACY
-                        if(b < t + ACCURACY):
-                            break
-                                               
-                        b = (self.area - h * t) / (2 * s + h - h)
+                                                                     
                         i_temp = (b * (2 * s + h)**3 - h**3 * (b - t)) / 12
                         M_temp = FRACTURE_STRESS * i_temp / (h/2 + s)
-                        F_temp = M_temp / 20
-                        # print(h, b, t, i_temp, F_temp, mass)
-                        # print(b, t)
+                        F_normal_temp = M_temp / 20
                         
+                        Q_shear = 0
+                        F_shear_temp = DELH_COE * FRACTURE_STRESS * self.area / ACCURACY * i_temp / Q_shear
+
+                        F_temp = min(F_normal_temp, F_shear_temp)
+                        
+                        # if(i_temp > self.i_hr_max):
                         if(F_temp/mass > self.fm and b > t + ACCURACY):
                             # print(b, d, h, k, F_temp, mass, F_temp/mass)
                             self.fm = F_temp/mass
@@ -198,11 +214,12 @@ class H_Beam:
                             self.hf = h
                             self.tf = t
                         
+                        s += ACCURACY
+                        b = (self.area - h * t) / (2 * s + h - h)
+                        
                     t += ACCURACY
                     s = ACCURACY
                     b = (self.area - h * t) / (2 * s + h - h)
-                    if(b < t + ACCURACY):
-                        break
 
                 h += ACCURACY
                 t = ACCURACY
@@ -217,8 +234,8 @@ class H_Beam:
         print("bf = {}\nsf = {}\nhf = {}\ntf = {}".format(self.bf, self.sf, self.hf, self.tf))
         print("Inertia = {}".format(self.i_hb_max))
         print("fm_max = ", self.fm)
-        print("hollow rectengular finished ----------------------------------------------")
+        print("H_Beam finished ----------------------------------------------")
 
-# HollowRectangular().cal()
+HollowRectangular().cal()
 # HollowSquare().cal()
-H_Beam().cal()
+# H_Beam().cal()
