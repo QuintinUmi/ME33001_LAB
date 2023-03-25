@@ -13,21 +13,48 @@ import matplotlib.ticker as ticker
 import lab_report_tool_package.read_report_file as lr
 import lab_report_tool_package.curve_analyze as lc
 
-#Please adjust your parameters according to the following instructions
 
-x_min = -0.05   # Set the data graph display size
-x_max = 5.
-y_min = 0.
-y_max = 75.
-isSteel = False #Whether it is metal
-
-#Set the source data path
 dataLine = lr.read_file_split_data("C:\\Users\\qqj03\\Desktop\\year2sem2\\ME33001\\lab session.txt")
-# print(data)
 
-stress = np.array(lr.get_colume_data(dataLine, 4))
-strain = np.array(lr.get_colume_data(dataLine, 5))
 
+
+load = np.array(lr.get_colume_data(dataLine, 0))
+extension = np.array(lr.get_colume_data(dataLine, 2))
+time = np.array(lr.get_colume_data(dataLine, 1))
+
+load = load[0: ]
+extension = extension[0: ]
+print(len(load))
+print(len(extension))
+
+
+
+for i in range(0, len(extension) - 1):
+    if(extension[i + 1] < extension[i]):
+        print("check")
+
+
+
+# plt.figure(figsize=(16, 7.5))
+plt.title("3-point-bending")
+plt.xlabel("Load(N)")
+plt.ylabel("Extention(%)")
+plt.style.use('seaborn')
+
+plt.grid(True)
+
+# y_min = load[0]
+
+# plt.axis([x_min, x_max, y_min, y_max])
+
+
+plt.plot(extension, load, label="Experimental data")
+
+plt.show()
+
+
+
+'''
 #The last parameter is the amount of data pre-fitted for the calculation of the line fit (to be adjusted manually)
 young_mod, intercept, r_value, p_value, dataIndex = lc.linear_analyze(strain, stress, 0,  100)  
 
@@ -206,3 +233,5 @@ for i in range(0, len(strain)):
 plt.show()
 
 os.system("PAUSE")
+
+'''
