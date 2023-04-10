@@ -12,6 +12,26 @@ import scipy.stats as st
 from scipy import integrate
 
 
+def bending_stress_cal(moment, deflection, area_inertia, c):
+    
+    stress = []
+    for i in range(0, len(deflection)):
+        stress.append(moment[i] * c / area_inertia)
+    
+    return stress
+
+def bending_shear_stress_cal(v, deflection, q, area_inertia, t):
+
+    shear_stress = []
+    for i in range(0, len(deflection)):
+        shear_stress.append(v[i] * q / (area_inertia * t))
+    
+    return shear_stress
+
+
+
+
+
 def linear_analyze(strain, stress, startIndex, ommitValue):
     
     dataIndex = -1
