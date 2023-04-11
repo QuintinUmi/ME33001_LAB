@@ -18,7 +18,9 @@ FRACTURE_STRESS = 33 * 10**6
 SHEAR_STRENGTH = 1 / (3**(1/2)) * YIELD_STRESS
 F = 0.
 M = 0.
-K = 0.5
+K = 0.65
+
+POS_BASE_FIXTURES = 10
 
 EXPERIMENTAL_MAX_FORCE = 1325.
 
@@ -87,15 +89,22 @@ class HollowRectangular:
                             mass = 100 * area_temp * DENSITY
 
                             i_temp = (b * d**3 - h * k**3) / 12
-                            M_temp = YIELD_STRESS * i_temp / (d/2)
-                            F_normal_temp = M_temp / 20 *10**(-9)
+                            M_temp = FRACTURE_STRESS * i_temp / (d/2)
+                            F_normal_temp = M_temp / 20 *10**(-6)
 
-                            Q_shear = (b*d/2 - k*h/2) * ((b)*(d/2)*(d/4) - (k/2)*h*(k/4)) / (b*d/2 - k*h/2)
-                            F_shear_temp = SHEAR_STRENGTH * (b - h) * i_temp / Q_shear *10**(-6)
+                            # Q_shear = (b*d/2 - k*h/2) * ((b)*(d/2)*(d/4) - (k/2)*h*(k/4)) / (b*d/2 - k*h/2)
+                            Q_shear = 2 * (d/4) * ((d/2) * (b - h)) + ((d/2) + (k/2)) / 2 * (h * (d - k))
+                            F_shear_temp = 4 * SHEAR_STRENGTH * (b - h) * i_temp / Q_shear *10**(-6)
 
-                            F_temp = min(F_normal_temp, F_shear_temp)
+                            M_y = YIELD_STRESS / (d/2) * i_temp * 10**(-9)
+                            F_y = M_y / (math.sin(H_Beam().theta) * (d/2) * 10**(-3))
+
+                            F_temp = min(F_normal_temp, F_shear_temp, F_y)
                             # print(F_normal_temp > F_shear_temp)
                             # print(F_shear_temp, F_normal_temp)
+
+                            # if(b == 38 and d == 38 and h == 34 and k == 30):
+                            #     print(F_normal_temp, F_shear_temp, F_y, mass, self.area)
 
                             # if(i_temp > self.i_hr_max):
                             if(F_temp/mass > self.fm):
@@ -110,6 +119,8 @@ class HollowRectangular:
                                 self.df = d
                                 self.hf = h
                                 self.kf = k
+
+                                self.areaf = b * d - h * k
 
                             k -= ACCURACY
                             area_temp = b * d - h * k
@@ -138,8 +149,12 @@ class HollowRectangular:
 
         print("bf = {}\ndf = {}\nhf = {}\nkf = {}".format(self.bf, self.df, self.hf, self.kf))
         print("Inertia = {}".format(self.i_hr_max))
-        print("fm_max = ", self.fm)
+        # print("--Normal Stress Max = {}\n---Shear Stress Max = {}".format(self.normal_stress_max, self.shear_stress_max))
+        print("Area =", self.areaf)
+        print("Force_max = ", self.F_hr_max)
+        print("fm_max = ", self.fm) # N/kg
         print("hollow Rectangular finished ----------------------------------------------")
+
 
 
 
@@ -160,29 +175,34 @@ class HollowSquare:
         while(self.area > 4 * ACCURACY**2):
 
             area_temp = self.area
-            mass = 100 * area_temp * DENSITY
 
             a = (self.area + 4 * ACCURACY**2) / (4 * ACCURACY)
             
             while(a >= 2):
 
                 b = a - 2 * ACCURACY
+                # print(area_temp, a, b)
                 area_temp = a**2 - b**2
-                while(area_temp <= self.area and b >= 0.):                 
+                while(area_temp <= self.area and b >= 0.):
+                    
+                    mass = 100 * area_temp * DENSITY
 
                     i_temp = (a**4 - b**4) / 12
-                    M_temp = YIELD_STRESS * i_temp / (a/2)
-                    F_normal_temp = M_temp / 20 *10**(-9)
+                    M_temp = FRACTURE_STRESS * i_temp / (a/2)
+                    F_normal_temp = M_temp / 20 *10**(-6)
 
                     Q_shear = (a*a/2 - b*b/2) * ((a)*(a/2)*(a/4) - (b/2)*b*(b/4)) / (a*a/2 - b*b/2)
                     F_shear_temp = SHEAR_STRENGTH * (a - b) * i_temp / Q_shear *10**(-6)
 
                     F_temp = min(F_normal_temp, F_shear_temp)
                     # print(F_normal_temp > F_shear_temp)
+
+                    # print(F_normal_temp, F_shear_temp)
                     
                     # if(i_temp > self.i_hr_max):
                     if(F_temp/mass > self.fm and a < HOR_MAX):
-
+                        
+                        # print(mass)
                         self.fm = F_temp/mass
                                 
                         self.i_hs_max = i_temp
@@ -191,6 +211,8 @@ class HollowSquare:
                                 
                         self.af = a
                         self.bf = b
+
+                        self.areaf = a**2 - b**2
 
                     b -= ACCURACY
                     area_temp = a**2 - b**2
@@ -204,8 +226,11 @@ class HollowSquare:
 
         print("af = {}\nbf = {}".format(self.af, self.bf))
         print("Inertia = {}".format(self.i_hs_max))
-        print("fm_max = ", self.fm)
-        print("Hollow Square finished ----------------------------------------------")
+        # print("--Normal Stress Max = {}\n---Shear Stress Max = {}".format(self.normal_stress_max, self.shear_stress_max))
+        print("Area =", self.areaf)
+        print("Force_max = ", self.F_hs_max)
+        print("fm_max = ", self.fm) # N/kg
+        print("HollowSquare finished ----------------------------------------------")
 
 
 class H_Beam:
@@ -229,7 +254,7 @@ class H_Beam:
         self.fm = 0.
 
     def cal(self):
-
+        f = open("fm log.txt", "w")
         b = s = h = t = ACCURACY #H beam
         count = 0
         while(self.area > 4 * ACCURACY**2):
@@ -254,13 +279,11 @@ class H_Beam:
                         Q_shear = s*b*(h+s)/2 + h*h*t/8
                         F_shear_temp = 2 * SHEAR_STRENGTH * t * i_temp / Q_shear *10**(-6)
 
-
-                        F_buckling = PI**2 * ELASTIC_MODULUS * (1/12 * t * h**3) / (K * LENGTH)**2 *10**(-6)
                         # print(F_normal_temp, F_shear_temp, F_buckling)
 
 
                         mcr_temp = mcr_cal(self.C1, self.C2, ELASTIC_MODULUS, SHEAR_MODULUS, self.inertia_z(b, s, h, t), 
-                                self.warping_constant(b, s, h, t), self.torsion_constant(b, s, h, t), LENGTH - 20, 
+                                self.warping_constant(b, s, h, t), self.inertia_t(b, s, h, t), LENGTH - 20, 
                                 h / 2 + s, self.k, 1.0)
                         F_buckling_temp = mcr_temp / (20 * 10**(-3))
                         rou_b = stability_factor(mcr_temp, h / 2 + s, i_temp, YIELD_STRESS)
@@ -270,8 +293,20 @@ class H_Beam:
                         # M_y = F_temp * math.sin(self.theta) * (h/2) * 10**(-3)
                         # stress_y = M_y * (h/2) / (h * t**3) * 10**(9)
 
+                        ###################################################################################
+                        
+                        
+                        Pcr = PI**2 * ELASTIC_MODULUS * self.inertia_z(b, s, h, t) / (K * (LENGTH - 2*POS_BASE_FIXTURES))**2 *10**(-6)
 
-                        F_temp = min(F_normal_temp, F_shear_temp, F_buckling, F_buckling_temp, F_y)
+                        Pt = (PI**2 * ELASTIC_MODULUS * self.inertia_t(b, s, h, t)) / ((LENGTH - 2 * POS_BASE_FIXTURES)**2) *10**(-6)
+                        # Pt = (SHEAR_MODULUS * self.torsion_constant(b, s, h, t)) / (K * (LENGTH - 2*POS_BASE_FIXTURES))**2 *10**(-6)
+
+                        # Pj = self.c(b, s, h, t) * ELASTIC_MODULUS * self.inertia_z(b, s, h, t) / ((LENGTH - 2*POS_BASE_FIXTURES)**2) *10**(-9)
+
+                        F_temp = min(F_normal_temp, F_shear_temp, Pcr, Pt)
+
+                        if(b == 38.5 and s == 2 and h == 34 and t == 2):
+                            print(F_normal_temp, F_shear_temp, Pcr, Pt, F_y, mass, self.area)
 
                         
                         # print(stress_y >= YIELD_STRESS)
@@ -286,19 +321,44 @@ class H_Beam:
                         # if(F_temp == F_buckling_temp):
                         #     print("b = ", b, "s = ", s, "h = ", h ,"t = ", t)
                         #     print(F_buckling_temp)
+                        # if(F_temp == Pcr):
+                        #     print("b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                        #     print(Pcr)
                         
-                        # print("b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                        # print("b = ", b, "s = ", s, "h = ", h ,"t = ", t, "fm = ",F_temp/mass)
+                        
+                        # print("b = ", b, "s = ", s, "h = ", h ,"t = ", t, "fm = ", F_temp/mass, file=f, flush=False)
+                        
                         # print(M_temp, mcr_temp)
                         # print(F_buckling_temp)
                         
                         if(F_temp/mass > self.fm and b > t + ACCURACY and b < HOR_MAX and h + 2 * s < HOR_MAX):
                             # print(stress_y)
                             # print(b, d, h, k, F_temp, mass, F_temp/mass)
-                            # print(F_normal_temp, F_shear_temp, F_buckling, F_buckling_temp)
+                            # print(F_normal_temp, F_shear_temp, F_buckling_temp, Pcr, Pt, Pj)
                             # print(M_temp, mcr_temp)
                             # print("b = ", b, "s = ", s, "h = ", h ,"t = ", t)
                             # print(M_temp, mcr_temp)
                             # print(F_buckling_temp)
+
+                            # if(F_temp == Pcr):
+                            #     print("Pcr b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(Pcr)
+                            # if(F_temp == Pt):
+                            #     print("Pt b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(Pt)
+                            # if(F_temp == Pj):
+                            #     print("Pj b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(Pj)
+                            # if(F_temp == F_normal_temp):
+                            #     print("F_normal_temp Pt b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(F_normal_temp)
+                            # if(F_temp == F_shear_temp):
+                            #     print("F_shear_temp Pt b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(F_shear_temp)
+
+                            
+
 
                             self.fm = F_temp/mass
                             
@@ -337,7 +397,7 @@ class H_Beam:
             
         print("i_z =", self.inertia_z(self.bf, self.sf, self.hf, self.tf))
         print("Mcr =", mcr_cal(self.C1, self.C2, ELASTIC_MODULUS, SHEAR_MODULUS, self.inertia_z(self.bf, self.sf, self.hf, self.tf), 
-                                self.warping_constant(self.bf, self.sf, self.hf, self.tf), self.torsion_constant(self.bf, self.sf, self.hf, self.tf), LENGTH - 20, 
+                                self.warping_constant(self.bf, self.sf, self.hf, self.tf), self.inertia_t(self.bf, self.sf, self.hf, self.tf), LENGTH - 20, 
                                 self.hf / 2 + self.sf, self.k, 1.0))
         print("bf = {}\nsf = {}\nhf = {}\ntf = {}".format(self.bf, self.sf, self.hf, self.tf))
         print("Inertia = {}".format(self.i_hb_max))
@@ -346,16 +406,33 @@ class H_Beam:
         print("Force_max = ", self.F_hb_max)
         print("fm_max = ", self.fm)
         print("H_Beam finished ----------------------------------------------")
-
+        f.close()
 
     def inertia_z(self, b, s, h, t):
         i_z = 2 * 1/12 * s * b**3 + 1/12 * h * t**3
         return i_z
 
-    def torsion_constant(self, b, s, h, t):
+    def inertia_t(self, b, s, h, t):
 
         i_t = (2 * b * s**3 + (h + s) * t**3) / 3
         return i_t
+    
+    def polar_inertia(self, b, s, h, t):
+
+        Ixx = h**3 * t / 12 + 2 * (s**3 * b / 12 + s * b * (h + s)**2 / 4)
+        Iyy = t**3 * h / 12 + 2 * (b**3 * s / 12)
+        j = Ixx + Iyy
+        return j
+
+    def torsion_constant(self, b, s, h, t):
+
+        j = (1.3/3) * (h * t**3 + 2 * b * s**3)
+        return j
+    
+    def c(self, b, s, h, t):
+        
+        c = (b * h**2 * t**2)/(6 * (b/2 - t/2)) 
+        return c
     
     def  warping_constant(self, b, s, h, t):
 
@@ -372,6 +449,6 @@ class H_Beam:
         return theta
     
 
-# HollowRectangular().cal()
+HollowRectangular().cal()
 # HollowSquare().cal()
 H_Beam().cal()

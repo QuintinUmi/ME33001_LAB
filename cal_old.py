@@ -61,7 +61,7 @@ class HollowRectangular:
                             Q_shear = (b*d/2 - k*h/2) * ((b)*(d/2)*(d/4) - (k/2)*h*(k/4)) / (b*d/2 - k*h/2)
                             F_shear_temp = SHEAR_STRENGTH * (b - h) * i_temp / Q_shear *10**(-6)
 
-                            F_temp = min(F_normal_temp, F_shear_temp)
+                            F_temp = min(F_normal_temp, F_shear_temp) * 10**(3)
                             # print(F_normal_temp > F_shear_temp)
                             # print(F_shear_temp, F_normal_temp)
 
@@ -78,6 +78,8 @@ class HollowRectangular:
                                 self.df = d
                                 self.hf = h
                                 self.kf = k
+
+                                self.areaf = b * d - h * k
 
                             k -= ACCURACY
                             area_temp = b * d - h * k
@@ -106,7 +108,10 @@ class HollowRectangular:
 
         print("bf = {}\ndf = {}\nhf = {}\nkf = {}".format(self.bf, self.df, self.hf, self.kf))
         print("Inertia = {}".format(self.i_hr_max))
-        print("fm_max = ", self.fm)
+        # print("--Normal Stress Max = {}\n---Shear Stress Max = {}".format(self.normal_stress_max, self.shear_stress_max))
+        print("Area =", self.areaf)
+        print("Force_max = ", self.F_hr_max)
+        print("fm_max = ", self.fm) # N/kg
         print("hollow Rectangular finished ----------------------------------------------")
 
 
@@ -163,7 +168,7 @@ class HollowSquare:
                         self.af = a
                         self.bf = b
 
-                        self.areaf = self.area
+                        self.areaf = a**2 - b**2
 
                     b -= ACCURACY
                     area_temp = a**2 - b**2
@@ -214,20 +219,27 @@ class H_Beam:
                                                                      
                         i_temp = (b * (2 * s + h)**3 - h**3 * (b - t)) / 12
                         M_temp = FRACTURE_STRESS * i_temp / (h/2 + s)
-                        F_normal_temp = M_temp / 20 *10**(-9)
+                        F_normal_temp = M_temp / 20 *10**(-6)
                         
                         Q_shear = s*b*(h+s)/2 + h*h*t/8
                         F_shear_temp = 2 * SHEAR_STRENGTH * t * i_temp / Q_shear *10**(-6)
 
-                        F_temp = min(F_normal_temp, F_shear_temp) * 10**(3)
+                        F_temp = min(F_normal_temp, F_shear_temp)
                         
                         
                         # if(i_temp > self.i_hr_max):
                         if(F_temp/mass > self.fm and b > t + ACCURACY and b < HOR_MAX and h + 2 * s < HOR_MAX):
                             # print(b, d, h, k, F_temp, mass, F_temp/mass)
                             print(i_temp, M_temp, F_normal_temp, F_shear_temp)
+                            # if(F_temp == F_normal_temp):
+                            #     print("F_normal_temp Pt b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(F_normal_temp)
+                            # if(F_temp == F_shear_temp):
+                            #     print("F_shear_temp Pt b = ", b, "s = ", s, "h = ", h ,"t = ", t)
+                            #     print(F_shear_temp)
                             
                             self.fm = F_temp/mass
+                            
                             
                             self.i_hb_max = i_temp
                             self.M_hb_max = M_temp
@@ -268,9 +280,10 @@ class H_Beam:
         # print("--Normal Stress Max = {}\n---Shear Stress Max = {}".format(self.normal_stress_max, self.shear_stress_max))
         print("Area =", self.areaf)
         print("Force_max = ", self.F_hb_max)
+        print("mass = ", 100 * self.areaf * DENSITY)
         print("fm_max = ", self.fm) # N/kg
         print("H_Beam finished ----------------------------------------------")
 
-# HollowRectangular().cal()
-HollowSquare().cal()
-# H_Beam().cal()
+HollowRectangular().cal()
+# HollowSquare().cal()
+H_Beam().cal()
