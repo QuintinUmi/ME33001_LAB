@@ -92,23 +92,15 @@ class HollowRectangular:
                             M_temp = FRACTURE_STRESS * i_temp / (d/2)
                             F_normal_temp = M_temp / 20 *10**(-6)
 
-                            # Q_shear = (b*d/2 - k*h/2) * ((b)*(d/2)*(d/4) - (k/2)*h*(k/4)) / (b*d/2 - k*h/2)
                             Q_shear = 2 * (d/4) * ((d/2) * (b - h)) + ((d/2) + (k/2)) / 2 * (h * (d - k))
                             F_shear_temp = 4 * SHEAR_STRENGTH * (b - h) * i_temp / Q_shear *10**(-6)
 
                             Pcr = 2 * PI**2 * ELASTIC_MODULUS * (1/12 * LENGTH *((b - h)/2)**3) / ((k + 0.0001))**2 *10**(-6)
 
-                            M_y = YIELD_STRESS / (d/2) * i_temp * 10**(-9)
-                            F_y = M_y / (math.sin(H_Beam().theta) * (d/2) * 10**(-3))
-
                             F_temp = min(F_normal_temp, F_shear_temp, Pcr)
-                            # print(F_normal_temp > F_shear_temp)
-                            # print(F_shear_temp, F_normal_temp)
 
-                            if(b == 32 and d == 38 and h == 26 and k == 32):
-                                print(F_normal_temp, F_shear_temp, Pcr, mass, area_temp)
+                            ... # Calculation of F (normal stress), F (shear stress), Pcr, and deriving the ultimate load:
 
-                            # if(i_temp > self.i_hr_max):
                             if(F_temp/mass > self.fm):
 
                                 self.fm = F_temp/mass
