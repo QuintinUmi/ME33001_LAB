@@ -10,8 +10,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+
 import lab_report_tool_package.read_report_file as lr
-import lab_report_tool_package.curve_analyze as lc
+import lab_report_tool_package.curve_analyze as ca
+import lab_report_tool_package.h_beam_package as hb
+import lab_report_tool_package.beam_test_data as td
+# import cal
 
 
 dataLine = lr.read_file_split_data("C:\\Users\\qqj03\\Desktop\\year2sem2\\ME33001\\lab session.txt")
@@ -19,26 +23,70 @@ dataLine = lr.read_file_split_data("C:\\Users\\qqj03\\Desktop\\year2sem2\\ME3300
 
 
 load = np.array(lr.get_colume_data(dataLine, 0))
-extension = np.array(lr.get_colume_data(dataLine, 2))
+deflection = np.array(lr.get_colume_data(dataLine, 2))
 time = np.array(lr.get_colume_data(dataLine, 1))
 
 load = load[0: ]
-extension = extension[0: ]
+deflection = deflection[0: ]
+
+moment = td.force_to_moment(load, deflection, 50)
+
+bending_stress = ca.bending_stress_cal(moment, deflection, 
+                                       hb.area_inertia(td.b, td.s, td.h, td.t), td.h / 2 + td.s)
+
+bending_shear_stress = ca.bending_shear_stress_cal(td.force_v(load, deflection, 50), deflection,  
+                                                   hb.static_moment(td.b, td.s, td.h, td.t), 
+                                                   hb.area_inertia(td.b, td.s, td.h, td.t), td.t)
+
+# h_beam_cal = cal.H_Beam()
+# h_beam_cal.cal()
+# F_normal_cal = h_beam_cal.F_normal
+# F_shear_cal = h_beam_cal.F_shear
+# Pcr = h_beam_cal.Pcr
+F_normal_cal = 4609.047368421053
+F_shear_cal = 2414.789733179558
+Pcr = 1252.198943621487
+
+
+
 print(len(load))
-print(len(extension))
+print(len(deflection))
 
 
-
-for i in range(0, len(extension) - 1):
-    if(extension[i + 1] < extension[i]):
+for i in range(0, len(deflection) - 1):
+    if(deflection[i + 1] < deflection[i]):
         print("check")
 
 
-
-# plt.figure(figsize=(16, 7.5))
+plt.figure(figsize=(16, 7.5))
 plt.title("3-point-bending")
-plt.xlabel("Load(N)")
-plt.ylabel("Extention(%)")
+plt.xlabel("Deflection(mm)")
+plt.ylabel("Load(N)")
+plt.style.use('seaborn')
+
+plt.grid(True)
+
+
+
+plt.plot(deflection, load, label="Experimental data", c='r')
+
+max_pos = np.where(load == load.max())[0][0]
+print(max_pos)
+plt.scatter(deflection[max_pos], load[max_pos], label="Maximun Force", c='black')
+plt.annotate("P_max\nLoad = " + str(round(load[max_pos], 4)) + "(N)\n" + "Deflection = " + str(round(deflection[max_pos], 4)) + "(mm)", 
+        xy=(deflection[max_pos], round(load[max_pos])), xytext=(deflection[max_pos]-2, load[max_pos] - 160), 
+            arrowprops=dict(facecolor='k', headwidth=5, width=1))
+
+
+plt.show()
+
+
+
+
+plt.figure(figsize=(16, 7.5))
+plt.title("3-point-bending")
+plt.xlabel("Deflection(mm)")
+plt.ylabel("Load(N)")
 plt.style.use('seaborn')
 
 plt.grid(True)
@@ -47,8 +95,23 @@ plt.grid(True)
 
 # plt.axis([x_min, x_max, y_min, y_max])
 
+plt.plot(deflection, load, label="Experimental data", c='r')
+# plt.plot(deflection, moment, label="Moment", c='r')
+plt.plot([deflection[0], deflection[len(deflection) - 1]], [F_normal_cal, F_normal_cal], label="Maximun Force for normal stress", c='black')
+plt.plot([deflection[0], deflection[len(deflection) - 1]], [F_shear_cal, F_shear_cal], label="Maximun Force for shear stress", c='y')
+plt.plot([deflection[0], deflection[len(deflection) - 1]], [Pcr, Pcr], label="Pcr", c='b')
+# plt.plot([deflection[0], deflection[len(deflection) - 1]], [td.f_buckling, td.f_buckling], label="Mcr", c='g')
+# plt.plot([deflection[0], deflection[len(deflection) - 1]], [td.YIELD_STRESS * td.i_x / (td.h/2 + td.s), td.YIELD_STRESS * td.i_x / (td.h/2 + td.s)], label="YIELD_STRESS", c='b')
 
-plt.plot(extension, load, label="Experimental data")
+
+# plt.plot(deflection, bending_stress, label="Bending Stress", c='b')
+# plt.plot(deflection, bending_shear_stress, label="Bending Shear Stress", c='g')
+# plt.plot( [deflection[0], deflection[len(deflection) - 1]], [td.mcr, td.mcr], label="Mcr", c='r')
+# plt.plot([deflection[0], deflection[len(deflection) - 1]], [td.YIELD_STRESS, td.YIELD_STRESS], label="YIELD_STRESS", c='b')
+# plt.plot( [deflection[0], deflection[len(deflection) - 1]], [td.SHEAR_STRENGTH, td.SHEAR_STRENGTH], label="SHEAR_STRENGTH", c='g')
+
+
+plt.legend(loc='upper right', prop=None, fontsize = 12, frameon=True)
 
 plt.show()
 
